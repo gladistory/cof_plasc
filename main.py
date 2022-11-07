@@ -1,3 +1,4 @@
+from email import encoders
 import sqlite3
 import tkinter as tk
 import pandas as pd
@@ -7,6 +8,7 @@ from tkinter.messagebox import showinfo
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
 from time import sleep
 
 janela = tk.Tk()
@@ -115,9 +117,12 @@ def Enviar():
     destinatario = Entry(root, textvariable=Dest, width='50', bg='white smoke')
     destinatario.place(x=20, y=125)
 
-    Label(root, text='Mensagem:', font='font 10 bold', bg='white smoke').place(x=20,y=170)
+    Label(root, text='Observação:', font='font 10 bold', bg='white smoke').place(x=20,y=170)
     mail_texto = Text(root, bg='white smoke', font='font 10 bold')
-    mail_texto.place(x=20, y=205, width=300, height=160)
+    mail_texto.place(x=20, y=205, width=300, height=100)
+
+    Label(root, text='Arquivo em anexo: cof.xlsx', font='font 10 bold', bg='white smoke').place(x=20,y=350)
+   
 
 
     def EnviarEmail():
@@ -127,12 +132,20 @@ def Enviar():
         senha_app = "soukxnrfzvkstnfg"
         mail_de = "desouza850@gmail.com"
         mail_para = destinatario.get()
+        excelName = 'cof.xlsx'
+        
+        fp = open(excelName, 'rb')
+        anexo = MIMEApplication(fp.read(), _subtype="xlsx")
+        fp.close()
+        anexo.add_header('Content-Disposition', 'attachment', filename=excelName)
         
         mimemsg = MIMEMultipart()
         mimemsg['From'] = mail_de
         mimemsg['To'] = mail_para
         mimemsg['Subject'] = assunto
         mimemsg.attach(MIMEText(mensagem, 'plain')) 
+        mimemsg.attach(anexo)
+        
 
         connection = smtplib.SMTP(host='smtp.gmail.com', port=587)
         connection.starttls()
@@ -141,7 +154,7 @@ def Enviar():
         connection.quit()
         sleep(0.5)
         Label(root, text="Seu email foi enviado com sucesso!", 
-            font="arial 8 bold", bg='white').place(x=20, y=380)  
+            font="arial 8 bold", bg='white').place(x=20, y=300)  
         return
     
     def Sair():
