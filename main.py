@@ -1,26 +1,25 @@
-from email import encoders
 import sqlite3
 import tkinter as tk
 import pandas as pd
 from tkinter import *
 from tkinter import ttk
-from tkinter.messagebox import showinfo
+from tkinter import messagebox
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 from time import sleep
 
+
 janela = tk.Tk()
-janela.title('Registro de COF')
-janela. geometry("425x400")
+janela.title('Registro de COF') 
+janela. geometry("825x500")
     
     
 
 def cadastrar_cof():
     conexao = sqlite3.connect('cof.db')
     c = conexao.cursor()
-
     #Inserir dados na tabela:
     c.execute("INSERT INTO cof VALUES (:data,:op,:resultado,:descrição)",
               {
@@ -29,7 +28,13 @@ def cadastrar_cof():
                   'resultado': entry_resultado.get(),
                   'descrição': entry_descricao.get()
               })
-
+    # Inserir dados na tabela:
+    c.execute("SELECT *, oid FROM cof")
+    cof_cadastrados = c.fetchall()
+    
+    # add data to the treeview
+    
+    tree.insert('', tk.END, values=cof_cadastrados[-1])
     # Commit as mudanças:
     conexao.commit()
     # Fechar o banco de dados:
@@ -48,53 +53,47 @@ def exporta_cof():
     # Inserir dados na tabela:
     c.execute("SELECT *, oid FROM cof")
     cof_cadastrados = c.fetchall()
-    # print(clientes_cadastrados)
     cof_cadastrados = pd.DataFrame(cof_cadastrados,columns=['data','op','resultado','descrição','Id_banco'])
     cof_cadastrados.to_excel('cof.xlsx')
-    
+    print('dados exportado para excel')
     # Commit as mudanças:
     conexao.commit()
 
     # Fechar o banco de dados:
     conexao.close()
+    sleep(0.5)
+    Label(janela, text="Dados exportados com sucesso!",  
+    font="arial 12 bold", bg='white').place(x=300, y=450) 
 
-def visualizar_dados():
-    janela = tk.Tk()
-    janela.title('Visualizar COF')
-    janela. geometry("1030x250") 
+    
+# define columns
+columns = ('data', 'op', 'resultado', 'descricao')
 
-    # define columns
-    columns = ('data', 'op', 'resultado', 'descricao', 'Id_banco')
+tree = ttk.Treeview(janela, columns=columns, show='headings')
 
-    tree = ttk.Treeview(janela, columns=columns, show='headings')
+# define headings
+tree.heading('data', text='Data')
+tree.heading('op', text='OP')
+tree.heading('resultado', text='Resultado')
+tree.heading('descricao', text='Descrição')
 
-    # define headings
-    tree.heading('data', text='Data')
-    tree.heading('op', text='OP')
-    tree.heading('resultado', text='Resultado')
-    tree.heading('descricao', text='Descrição')
-    tree.heading('Id_banco', text='ID')
-    # generate sample data
-    conexao = sqlite3.connect('cof.db')
-    c = conexao.cursor()
+conexao = sqlite3.connect('cof.db')
+c = conexao.cursor()
 
-    # Inserir dados na tabela:
-    c.execute("SELECT *, oid FROM cof")
-    cof_cadastrados = c.fetchall()
+# Inserir dados na tabela:
+c.execute("SELECT *, oid FROM cof")
+cof_cadastrados = c.fetchall()
 
-    # add data to the treeview
-    for cof in cof_cadastrados:
-        tree.insert('', tk.END, values=cof)
+# add data to the treeview
+for cof in cof_cadastrados:
+    tree.insert('', tk.END, values=cof)
 
-    tree.grid(row=0, column=0, sticky='nsew')
+tree.grid(row=0, column=1, sticky='ns')
 
-    # add a scrollbar
-    scrollbar = ttk.Scrollbar(janela, orient=tk.VERTICAL, command=tree.yview)
-    tree.configure(yscroll=scrollbar.set)
-    scrollbar.grid(row=0, column=1, sticky='ns')
-
-    # run the app
-    janela.mainloop()
+# add a scrollbar
+scrollbar = ttk.Scrollbar(janela, orient=tk.VERTICAL, command=tree.yview)
+tree.configure(yscroll=scrollbar.set)
+scrollbar.grid(row=0, column=2, sticky='ns')
 
 # Enviar dados para o Email
 def Enviar():
@@ -172,51 +171,59 @@ def Enviar():
 def Sair():
     janela.destroy()
     
+def deletar():
+    conexao = sqlite3.connect('cof.db')
+    try:
+        selecionado=tree.selection()[0]
+        tree.delete(selecionado)  
+    except: 
+        messagebox.showinfo(title="ERRO", message='Selecione a linha que deseja deletar')
 #Rótulos Entradas:
 label_data = tk.Label(janela, text='Data')
-label_data.grid(row=0,column=0, padx=10, pady=10)
+label_data.place(x=150, y=250, width=120)
 
 label_op = tk.Label(janela, text='OP')
-label_op.grid(row=1, column=0, padx=10, pady=10)
+label_op.place(x=150, y=300, width=120)
 
 label_resultado = tk.Label(janela, text='Resultado')
-label_resultado.grid(row=2, column=0, padx=10, pady=10)
+label_resultado.place(x=400, y=250, width=120)
 
 label_descricao = tk.Label(janela, text='Descrição')
-label_descricao.grid(row=3, column=0, padx=10, pady=10)
+label_descricao.place(x=400, y=300, width=120)
 
 #Caixas Entradas:
-entry_data = tk.Entry(janela , width =35)
-entry_data.grid(row=0,column=1, padx=10, pady=10)
+entry_data = tk.Entry(janela , width=40)
+entry_data.place(x=250, y=250, width=120)
 
-entry_op = tk.Entry(janela, width =35)
-entry_op.grid(row=1, column=1, padx=10, pady=10)
+entry_op = tk.Entry(janela, width=40)
+entry_op.place(x=250, y=300, width=120)
 
-entry_resultado = tk.Entry(janela, width =35)
-entry_resultado.grid(row=2, column=1, padx=10, pady=10)
+entry_resultado = tk.Entry(janela, width=40)
+entry_resultado.place(x=500, y=250, width=120)
 
-entry_descricao = tk.Entry(janela, width =35)
-entry_descricao.grid(row=3, column=1, padx=10, pady=10)
+entry_descricao = tk.Entry(janela, width=40)
+entry_descricao.place(x=500, y=300, width=120)
+
 
 # Botão de Cadastrar
 
 botao_cadastrar = tk.Button(text='Cadastrar COF', command=cadastrar_cof, bg='blue')
-botao_cadastrar.grid(row=5, column=0,  padx=10, ipadx = 15, pady = 10)
+botao_cadastrar.place(x=250, y=350, width=120)
 
 # Botão de Exportar
 
-botao_exportar = tk.Button(text='Exportar para Excel', command=exporta_cof)
-botao_exportar.grid(row=5, column=1, padx=10, ipadx = 15)
+botao_exportar = tk.Button(text='Exportar para Excel', command=exporta_cof, bg='green')
+botao_exportar.place(x=200, y=400, width=120)
 
 # Botão de Visualizar
 
-botao_exportar = tk.Button(text='Visualizar Dados', command=visualizar_dados)
-botao_exportar.grid(row=6, column=0, padx=10, pady=10 , ipadx = 15)
+botao_enviar = tk.Button(text='Enviar para email', command=Enviar, bg='yellow')
+botao_enviar.place(x=350, y=400, width=120)
 
-botao_exportar = tk.Button(text='Enviar para email', command=Enviar)
-botao_exportar.grid(row=6, column=1, padx=10, pady=10 , ipadx = 15)
+botao_deletar = tk.Button(text='Deletar', command=deletar , bg='red')
+botao_deletar.place(x=500, y=350, width=120)
 
-botao_exportar = tk.Button(text='Sair', command=Sair, bg='red')
-botao_exportar.grid(row=7, column=0, padx=10, pady=10 , ipadx = 50)
+botao_deletar = tk.Button(text='Sair', command=Sair)
+botao_deletar.place(x=500, y=400, width=120)
 
 janela.mainloop()
